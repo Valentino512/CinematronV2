@@ -1,0 +1,60 @@
+﻿@model IEnumerable<MovieCard>
+
+@{
+    ViewData["Title"] = "Home";
+    var search = ViewData["Search"] as string;
+}
+
+<section class="cinemátron-hero">
+    <div class="hero-copy">
+        <p class="eyebrow">YOUR PERSONAL MOVIE LIBRARY</p>
+        <h1>Stories worth<br /><span>watching.</span></h1>
+        <p class="hero-description">Discover new worlds, unforgettable characters, and the films everyone is talking about.</p>
+        <a class="cinemátron-button" href="#new-releases">Explore movies <span>→</span></a>
+    </div>
+    <div class="hero-reel" aria-hidden="true"><span>▶</span></div>
+</section>
+
+<section id="new-releases" class="movie-section">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">CINEMATRON COLLECTION</p>
+            <h2>New videos</h2>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(search))
+        {
+            <p class="search-result">Results for <strong>“@search”</strong></p>
+        }
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="movie-grid">
+            @foreach (var movie in Model)
+            {
+                <article class="movie-card">
+                    <div class="poster-wrap">
+                        <img src="@movie.PosterUrl" alt="Poster for @movie.Title" loading="lazy" />
+                        <button class="play-button" type="button" aria-label="Play @movie.Title">▶</button>
+                    </div>
+                    <div class="movie-details">
+                        <div class="movie-meta"><span>@movie.Genre</span><span>@movie.Year</span></div>
+                        <h3>@movie.Title</h3>
+                        <p>@movie.Description</p>
+                        <span class="runtime">@movie.Runtime</span>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">No movies matched your search.</div>
+    }
+</section>
+
+<section id="about" class="about-strip">
+    <p class="eyebrow">ABOUT CINEMATRON</p>
+    <h2>Made for movie people.</h2>
+    <p>Keep your favorite stories in one place and find your next great watch.</p>
+</section>
