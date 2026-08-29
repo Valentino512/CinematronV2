@@ -1,0 +1,50 @@
+@model DatabaseDiagnosticsViewModel
+@{
+    ViewData["Title"] = "Database Test";
+}
+
+<section class="container py-4">
+    <p class="eyebrow">CINEMATRON DIAGNOSTICS</p>
+    <h1>Database test</h1>
+    <p class="text-muted">Runtime information for the database configured for this application.</p>
+
+    <div class="alert @(Model.CanConnect ? "alert-success" : "alert-danger")" role="status">
+        <strong>Connection:</strong> @(Model.CanConnect ? "Connected successfully" : "Connection failed")
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ConnectionError))
+    {
+        <div class="alert alert-warning">
+            <strong>Error:</strong> @Model.ConnectionError
+        </div>
+    }
+
+    <dl class="row">
+        <dt class="col-sm-4">Environment</dt>
+        <dd class="col-sm-8">@Model.EnvironmentName</dd>
+        <dt class="col-sm-4">EF Core provider</dt>
+        <dd class="col-sm-8">@Model.Provider</dd>
+        <dt class="col-sm-4">Server</dt>
+        <dd class="col-sm-8">@Model.Server</dd>
+        <dt class="col-sm-4">Database</dt>
+        <dd class="col-sm-8">@Model.Database</dd>
+        <dt class="col-sm-4">Connection string</dt>
+        <dd class="col-sm-8"><code>@Model.RedactedConnectionString</code></dd>
+    </dl>
+
+    <h2 class="h4 mt-4">Migrations</h2>
+    @if (Model.PendingMigrations.Count == 0)
+    {
+        <p class="text-success">No pending migrations.</p>
+    }
+    else
+    {
+        <p class="text-warning">Pending migrations: @Model.PendingMigrations.Count</p>
+        <ul>
+            @foreach (var migration in Model.PendingMigrations)
+            {
+                <li><code>@migration</code></li>
+            }
+        </ul>
+    }
+</section>

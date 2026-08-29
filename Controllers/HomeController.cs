@@ -1,10 +1,13 @@
+using Cinematron.Data;
 using Cinematron.Models;
+using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using System.Diagnostics;
 
 namespace Cinematron.Controllers
 {
-    public class HomeController : Controller
+    public class HomeController(ApplicationDbContext dbContext, IWebHostEnvironment environment) : Controller
     {
         public IActionResult Index(string? search)
         {
@@ -30,6 +33,38 @@ namespace Cinematron.Controllers
         }
 
         [HttpGet]
+        public IActionResult Test()
+        {
+            var connection = dbContext.Database.GetDbConnection();
+            var diagnostics = new DatabaseDiagnosticsViewModel
+            {
+                EnvironmentName = environment.EnvironmentName,
+                Provider = dbContext.Database.ProviderName ?? "Unknown",
+                Server = connection.DataSource,
+                Database = connection.Database,
+                RedactedConnectionString = RedactConnectionString(connection.ConnectionString)
+            };
+
+            try
+            {
+                diagnostics = diagnostics with { CanConnect = dbContext.Database.CanConnect() };
+                diagnostics = diagnostics with
+                {
+                    PendingMigrations = dbContext.Database.GetPendingMigrations().ToArray()
+                };
+            }
+            catch (Exception exception)
+            {
+                diagnostics = diagnostics with
+                {
+                    ConnectionError = $"{exception.GetType().Name}: {exception.Message}"
+                };
+            }
+
+            return View(diagnostics);
+        }
+
+        [HttpGet]
         public IActionResult Upload() => View(new UploadVideoViewModel());
 
         [HttpPost]
@@ -43,6 +78,21 @@ namespace Cinematron.Controllers
 
             TempData["UploadMessage"] = $"{model.Title} was uploaded successfully.";
             return RedirectToAction(nameof(Upload));
+        }
+
+        private static string RedactConnectionString(string connectionString)
+        {
+            try
+            {
+                var builder = new SqlConnectionStringBuilder(connectionString);
+                builder.Password = "********";
+                builder.UserID = string.IsNullOrWhiteSpace(builder.UserID) ? string.Empty : "********";
+                return builder.ConnectionString;
+            }
+            catch (ArgumentException)
+            {
+                return "[connection string could not be parsed]";
+            }
         }
 
         private void ValidateUpload(UploadVideoViewModel model)
