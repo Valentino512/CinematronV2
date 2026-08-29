@@ -29,10 +29,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include=".appmod\.gitignore" />
-    <None Include=".appmod\.migration\migration.md" />
-    <None Include=".appmod\.migration\plan.md" />
-    <None Include=".appmod\.migration\progress.md" />
+    <None Include=".azure\plan..copilot.md" />
+    <None Include=".azure\progress..copilot.md" />
   </ItemGroup>
 
 </Project>
