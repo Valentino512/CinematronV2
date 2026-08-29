@@ -20,8 +20,14 @@ namespace Cinematron.Data
                 entity.Property(movie => movie.Title).HasMaxLength(100).IsRequired();
                 entity.Property(movie => movie.Genre).HasMaxLength(60).IsRequired();
                 entity.Property(movie => movie.Description).HasMaxLength(1000).IsRequired();
+                entity.Property(movie => movie.OwnerId).HasMaxLength(450).IsRequired();
                 entity.Property(movie => movie.CreatedUtc).HasPrecision(0);
                 entity.HasIndex(movie => movie.Title);
+                entity.HasIndex(movie => movie.OwnerId);
+                entity.HasOne(movie => movie.Owner)
+                    .WithMany()
+                    .HasForeignKey(movie => movie.OwnerId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             builder.Entity<MovieFile>(entity =>

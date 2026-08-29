@@ -13,7 +13,18 @@ namespace Cinematron.Models
         string Year,
         string Runtime,
         string Description,
-        string PosterUrl);
+        string PosterUrl,
+        Guid? Id = null,
+        string? VideoUrl = null);
+
+    public sealed record WatchVideoViewModel(
+        Guid Id,
+        string Title,
+        string Genre,
+        string Description,
+        string PosterUrl,
+        string VideoUrl,
+        string OriginalFileName);
 
     public sealed class UploadVideoViewModel
     {

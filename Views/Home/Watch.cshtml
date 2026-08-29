@@ -1,0 +1,20 @@
+@model WatchVideoViewModel
+@{
+    ViewData["Title"] = Model.Title;
+}
+
+<section class="watch-page">
+    <a class="watch-back" asp-action="Videos">← Back to videos</a>
+    <div class="watch-player-wrap">
+        <video class="watch-player" controls playsinline preload="metadata" poster="@Model.PosterUrl">
+            <source src="@Model.VideoUrl" />
+            Your browser does not support video playback.
+        </video>
+    </div>
+    <div class="watch-details">
+        <p class="eyebrow">NOW PLAYING</p>
+        <div class="movie-meta"><span>@Model.Genre</span><span>@Model.OriginalFileName</span></div>
+        <h1>@Model.Title</h1>
+        <p>@Model.Description</p>
+    </div>
+</section>

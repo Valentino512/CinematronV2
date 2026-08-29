@@ -1,0 +1,99 @@
+@model VideoFilterViewModel
+@{
+    ViewData["Title"] = "Videos";
+}
+
+<section class="movie-section videos-page">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">CINEMATRON COLLECTION</p>
+            <h1>Explore videos</h1>
+            <p class="page-subtitle">Find your next story by title, genre, or upload date.</p>
+        </div>
+        <span class="result-count">@Model.Movies.Count @(Model.Movies.Count == 1 ? "video" : "videos")</span>
+    </div>
+
+    <form class="video-filters" asp-controller="Home" asp-action="Videos" method="get">
+        <div class="filter-heading">
+            <div>
+                <strong>Find a video</strong>
+                <span>Use one filter or combine several.</span>
+            </div>
+            <a asp-controller="Home" asp-action="Videos">Clear all</a>
+        </div>
+        <div class="filter-grid">
+            <div class="filter-field filter-search">
+                <label for="name">Name</label>
+                <input id="name" name="name" value="@Model.Name" placeholder="Search by movie name" />
+            </div>
+            <div class="filter-field">
+                <label for="genre">Genre</label>
+                <select id="genre" name="genre">
+                    <option value="">All genres</option>
+                    @foreach (var genre in Model.Genres)
+                    {
+                        <option value="@genre" selected="@(string.Equals(Model.Genre, genre, StringComparison.OrdinalIgnoreCase))">@genre</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="fromDate">Uploaded from</label>
+                <input id="fromDate" name="fromDate" type="date" value="@(Model.FromDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="filter-field">
+                <label for="toDate">Uploaded to</label>
+                <input id="toDate" name="toDate" type="date" value="@(Model.ToDate?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="filter-field">
+                <label for="sort">Sort by</label>
+                <select id="sort" name="sort">
+                    <option value="newest" selected="@(Model.Sort == "newest")">Newest first</option>
+                    <option value="oldest" selected="@(Model.Sort == "oldest")">Oldest first</option>
+                    <option value="name" selected="@(Model.Sort == "name")">Name A–Z</option>
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button class="cinemátron-button" type="submit">Apply filters <span>→</span></button>
+            </div>
+        </div>
+    </form>
+
+    @if (Model.Movies.Any())
+    {
+        <div class="movie-grid">
+            @foreach (var movie in Model.Movies)
+            {
+                <article class="movie-card">
+                    <div class="poster-wrap">
+                        <img src="@movie.PosterUrl" alt="Poster for @movie.Title" loading="lazy" />
+                        @if (movie.Id.HasValue && !string.IsNullOrWhiteSpace(movie.VideoUrl))
+                        {
+                            <a class="play-button" asp-action="Watch" asp-route-id="@movie.Id" aria-label="Play @movie.Title">▶</a>
+                        }
+                    </div>
+                    <div class="movie-details">
+                        <div class="movie-meta"><span>@movie.Genre</span><span>@movie.Year</span></div>
+                        @if (movie.Id.HasValue && !string.IsNullOrWhiteSpace(movie.VideoUrl))
+                        {
+                            <h3><a class="movie-title-link" asp-action="Watch" asp-route-id="@movie.Id">@movie.Title</a></h3>
+                        }
+                        else
+                        {
+                            <h3>@movie.Title</h3>
+                        }
+                        <p>@movie.Description</p>
+                        <span class="runtime">@movie.Runtime</span>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <h2>No videos found</h2>
+            <p>Try removing a filter or searching for a different title or genre.</p>
+            <a class="cinemátron-button" asp-action="Videos">Show all videos <span>→</span></a>
+        </div>
+    }
+</section>

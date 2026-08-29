@@ -1,0 +1,49 @@
+@model IEnumerable<MovieCard>
+@{
+    ViewData["Title"] = "My Videos";
+    var search = ViewData["Search"] as string;
+}
+
+<section class="movie-section">
+    <div class="section-heading">
+        <div>
+            <p class="eyebrow">YOUR CINEMATRON COLLECTION</p>
+            <h1>My Videos</h1>
+        </div>
+        @if (!string.IsNullOrWhiteSpace(search))
+        {
+            <p class="search-result">Results for <strong>“@search”</strong></p>
+        }
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="movie-grid">
+            @foreach (var movie in Model)
+            {
+                <article class="movie-card">
+                    <div class="poster-wrap">
+                        <img src="@movie.PosterUrl" alt="Poster for @movie.Title" loading="lazy" />
+                        @if (movie.Id.HasValue && !string.IsNullOrWhiteSpace(movie.VideoUrl))
+                        {
+                            <a class="play-button" asp-action="Watch" asp-route-id="@movie.Id" aria-label="Play @movie.Title">▶</a>
+                        }
+                    </div>
+                    <div class="movie-details">
+                        <div class="movie-meta"><span>@movie.Genre</span><span>@movie.Year</span></div>
+                        <h3><a class="movie-title-link" asp-action="Watch" asp-route-id="@movie.Id">@movie.Title</a></h3>
+                        <p>@movie.Description</p>
+                        <span class="runtime">@movie.Runtime</span>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <p>You have not uploaded any videos yet.</p>
+            <a class="cinemátron-button" asp-action="Upload">Upload a movie <span>→</span></a>
+        </div>
+    }
+</section>
