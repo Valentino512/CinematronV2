@@ -1,15 +1,11 @@
 {
   "dependencies": {
-    "mssql1": {
-      "type": "mssql.local",
-      "connectionId": "ConnectionStrings:DefaultConnection"
-    },
-    "mssql2": {
+    "mssql": {
       "serviceConnectorResourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('serviceConnectorResourceGroupName')]/providers/Microsoft.ServiceLinker/locations/westus/connectors/ConnectionStringsDatabaseConnection_D3F80DC197",
       "secretStore": "LocalSecretsFile",
       "resourceId": "/subscriptions/[parameters('subscriptionId')]/resourceGroups/[parameters('resourceGroupName')]/providers/Microsoft.Sql/servers/cinematron-v2/databases/CinematronV2db",
       "type": "mssql.azure",
-      "connectionId": "ConnectionStrings:DatabaseConnection"
+      "connectionId": "ConnectionStrings:DefaultConnection"
     }
   }
 }
