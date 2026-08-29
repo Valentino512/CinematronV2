@@ -13,7 +13,7 @@
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark cinemátron-nav">
             <div class="container">
-                <a class="navbar-brand cinemátron-brand" asp-area="" asp-controller="Home" asp-action="Index">CINEMATRON</a>
+                <a class="navbar-brand cinemátron-brand" asp-controller="Home" asp-action="Index">CINEMATRON</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
@@ -21,19 +21,16 @@
                 <div class="navbar-collapse collapse" id="navbarSupportedContent">
                     <ul class="navbar-nav cinemátron-links me-auto">
                         <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="#new-releases">Videos</a>
+                            <a class="nav-link" href="/#new-releases">Videos</a>
                         </li>
-                        <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
-                        <li class="nav-item"><a class="nav-link" href="#upload">Upload</a></li>
                     </ul>
-                    <form class="cinemátron-search" asp-controller="Home" asp-action="Index" method="get">
-                        <input name="search" value="@Context.Request.Query["search"]" type="search" placeholder="Search movies..." aria-label="Search movies" />
-                        <button type="submit">SEARCH</button>
-                    </form>
-                    <input class="cinemátron-clock" id="clock" type="text" disabled aria-label="Current time" />
+                    <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Upload">Upload</a></li>
+                    </ul>
+                    <form class="cinemátron-search" asp-controller="Home" asp-action="Index" method="get"><input name="search" value="@Context.Request.Query["search"]" type="search" placeholder="Search movies..." aria-label="Search movies" /><button type="submit">SEARCH</button></form>
                     <partial name="_LoginPartial" />
                 </div>
             </div>
@@ -47,21 +44,12 @@
 
     <footer class="cinemátron-footer">
         <div class="container">
-            <span>&copy; @DateTime.Now.Year - CINEMATRON</span>
-            <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; @DateTime.Now.Year - CINEMATRON - <a asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-    <script>
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('clock').value = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        }
-        updateClock();
-        setInterval(updateClock, 1000);
-    </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
