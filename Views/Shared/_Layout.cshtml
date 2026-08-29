@@ -24,11 +24,10 @@
                             <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="/#new-releases">Videos</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="Videos">Videos</a>
                         </li>
-                    </ul>
-                    <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Upload">Upload</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
+                        <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Upload">Upload</a></li>
                     </ul>
                     <form class="cinemátron-search" asp-controller="Home" asp-action="Index" method="get"><input name="search" value="@Context.Request.Query["search"]" type="search" placeholder="Search movies..." aria-label="Search movies" /><button type="submit">SEARCH</button></form>
                     <partial name="_LoginPartial" />

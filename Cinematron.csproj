@@ -13,6 +13,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Azure.Storage.Files.Shares" Version="12.27.1" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.11" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.11" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.11" />
@@ -23,6 +24,12 @@
 
   <ItemGroup>
     <ContainerPort Include="8081" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include=".appmod\.gitignore" />
+    <None Include=".appmod\.migration\plan.md" />
+    <None Include=".appmod\.migration\progress.md" />
   </ItemGroup>
 
 </Project>

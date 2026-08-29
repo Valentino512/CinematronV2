@@ -19,6 +19,11 @@ namespace Cinematron.Controllers
             return View(filteredMovies);
         }
 
+        public IActionResult Videos(string? search)
+        {
+            return Index(search);
+        }
+
         public IActionResult Privacy()
         {
             return View();
@@ -31,11 +36,41 @@ namespace Cinematron.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Upload(UploadVideoViewModel model)
         {
+            ValidateUpload(model);
+
             if (!ModelState.IsValid)
                 return View(model);
 
             TempData["UploadMessage"] = $"{model.Title} was uploaded successfully.";
             return RedirectToAction(nameof(Upload));
+        }
+
+        private void ValidateUpload(UploadVideoViewModel model)
+        {
+            const long maximumVideoSize = 500L * 1024 * 1024;
+            const long maximumPosterSize = 5L * 1024 * 1024;
+            var videoExtensions = new[] { ".mp4", ".webm", ".mov" };
+            var posterExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+
+            if (model.VideoFile is null)
+                ModelState.AddModelError(nameof(model.VideoFile), "Please select a video file.");
+            else
+            {
+                if (model.VideoFile.Length == 0)
+                    ModelState.AddModelError(nameof(model.VideoFile), "The video file cannot be empty.");
+                if (model.VideoFile.Length > maximumVideoSize)
+                    ModelState.AddModelError(nameof(model.VideoFile), "The video must be smaller than 500 MB.");
+                if (!videoExtensions.Contains(Path.GetExtension(model.VideoFile.FileName), StringComparer.OrdinalIgnoreCase))
+                    ModelState.AddModelError(nameof(model.VideoFile), "Only MP4, WebM, and MOV videos are supported.");
+            }
+
+            if (model.PosterFile is not null)
+            {
+                if (model.PosterFile.Length == 0 || model.PosterFile.Length > maximumPosterSize)
+                    ModelState.AddModelError(nameof(model.PosterFile), "The poster must be between 1 byte and 5 MB.");
+                if (!posterExtensions.Contains(Path.GetExtension(model.PosterFile.FileName), StringComparer.OrdinalIgnoreCase))
+                    ModelState.AddModelError(nameof(model.PosterFile), "Only JPG, PNG, and WebP posters are supported.");
+            }
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]

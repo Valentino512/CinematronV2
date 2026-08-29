@@ -27,6 +27,7 @@ namespace Cinematron.Models
         [System.ComponentModel.DataAnnotations.StringLength(1000)]
         public string Description { get; set; } = string.Empty;
 
+        [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Please select a video file.")]
         [System.ComponentModel.DataAnnotations.Display(Name = "Video file")]
         public Microsoft.AspNetCore.Http.IFormFile? VideoFile { get; set; }
 
