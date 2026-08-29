@@ -1,60 +1,7 @@
 ﻿@model IEnumerable<MovieCard>
-
-@{
-    ViewData["Title"] = "Home";
-    var search = ViewData["Search"] as string;
-}
-
-<section class="cinemátron-hero">
-    <div class="hero-copy">
-        <p class="eyebrow">YOUR PERSONAL MOVIE LIBRARY</p>
-        <h1>Stories worth<br /><span>watching.</span></h1>
-        <p class="hero-description">Discover new worlds, unforgettable characters, and the films everyone is talking about.</p>
-        <a class="cinemátron-button" href="#new-releases">Explore movies <span>→</span></a>
-    </div>
-    <div class="hero-reel" aria-hidden="true"><span>▶</span></div>
-</section>
-
-<section id="new-releases" class="movie-section">
-    <div class="section-heading">
-        <div>
-            <p class="eyebrow">CINEMATRON COLLECTION</p>
-            <h2>New videos</h2>
-        </div>
-        @if (!string.IsNullOrWhiteSpace(search))
-        {
-            <p class="search-result">Results for <strong>“@search”</strong></p>
-        }
-    </div>
-
-    @if (Model.Any())
-    {
-        <div class="movie-grid">
-            @foreach (var movie in Model)
-            {
-                <article class="movie-card">
-                    <div class="poster-wrap">
-                        <img src="@movie.PosterUrl" alt="Poster for @movie.Title" loading="lazy" />
-                        <button class="play-button" type="button" aria-label="Play @movie.Title">▶</button>
-                    </div>
-                    <div class="movie-details">
-                        <div class="movie-meta"><span>@movie.Genre</span><span>@movie.Year</span></div>
-                        <h3>@movie.Title</h3>
-                        <p>@movie.Description</p>
-                        <span class="runtime">@movie.Runtime</span>
-                    </div>
-                </article>
-            }
-        </div>
-    }
-    else
-    {
-        <div class="empty-state">No movies matched your search.</div>
-    }
-</section>
-
-<section id="about" class="about-strip">
-    <p class="eyebrow">ABOUT CINEMATRON</p>
-    <h2>Made for movie people.</h2>
-    <p>Keep your favorite stories in one place and find your next great watch.</p>
-</section>
+@{ ViewData["Title"] = "Home"; var search = ViewData["Search"] as string; }
+<section class="cinemátron-hero"><div class="hero-copy"><p class="eyebrow">YOUR PERSONAL MOVIE LIBRARY</p><h1>Stories worth<br /><span>watching.</span></h1><p class="hero-description">Discover new worlds, unforgettable characters, and the films everyone is talking about.</p><a class="cinemátron-button" href="#new-releases">Explore movies <span>→</span></a></div><div class="hero-reel" aria-hidden="true"><span>▶</span></div></section>
+<section class="commercial-banners" aria-label="Promotional spaces"><article class="commercial-banner"><span class="commercial-label">FUTURE PARTNER SPOTLIGHT</span><h2>Your next great story could be here.</h2><p>A premium space reserved for future Cinematron partners and movie promotions.</p><span class="commercial-placeholder">AD SPACE</span></article><article class="commercial-banner commercial-banner-alt"><span class="commercial-label">COMING SOON</span><h2>New releases. Special events. More to watch.</h2><p>Promotional content will appear here in a future update.</p><span class="commercial-placeholder">PROMOTION SPACE</span></article></section>
+<section id="new-releases" class="movie-section"><div class="section-heading"><div><p class="eyebrow">CINEMATRON COLLECTION</p><h2>New videos</h2></div>@if (!string.IsNullOrWhiteSpace(search)) { <p class="search-result">Results for <strong>“@search”</strong></p> }</div>
+@if (Model.Any()) { <div class="movie-grid">@foreach (var movie in Model) { <article class="movie-card"><div class="poster-wrap"><img src="@movie.PosterUrl" alt="Poster for @movie.Title" loading="lazy" />@if (movie.Id.HasValue && !string.IsNullOrWhiteSpace(movie.VideoUrl)) { <a class="play-button" asp-action="Watch" asp-route-id="@movie.Id" aria-label="Play @movie.Title">▶</a> }</div><div class="movie-details"><div class="movie-meta"><span>@movie.Genre</span><span>@movie.Year</span></div>@if (movie.Id.HasValue && !string.IsNullOrWhiteSpace(movie.VideoUrl)) { <h3><a class="movie-title-link" asp-action="Watch" asp-route-id="@movie.Id">@movie.Title</a></h3> } else { <h3>@movie.Title</h3> }<p>@movie.Description</p><span class="runtime">@movie.Runtime</span></div></article> }</div> } else { <div class="empty-state">No movies matched your search.</div> }</section>
+<section id="about" class="about-strip"><p class="eyebrow">ABOUT CINEMATRON</p><h2>Made for movie people.</h2><p>Keep your favorite stories in one place and find your next great watch.</p></section>

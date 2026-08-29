@@ -1,0 +1,53 @@
+@page
+@model Cinematron.Areas.Identity.Pages.Account.RegisterModel
+@{
+    ViewData["Title"] = "Create your account";
+}
+
+<section class="auth-page">
+    <div class="auth-intro">
+        <p class="eyebrow">WELCOME TO CINEMATRON</p>
+        <h1>Your next story starts here.</h1>
+        <p>Save your movie uploads, build your personal collection, and discover something worth watching.</p>
+        <div class="auth-benefits">
+            <span>✓ Your own movie library</span>
+            <span>✓ Easy video uploads</span>
+            <span>✓ No email confirmation wait</span>
+        </div>
+    </div>
+
+    <div class="auth-card">
+        <h2>Create an account</h2>
+        <p class="auth-card-subtitle">It only takes a moment to get started.</p>
+        <form method="post">
+            <input type="hidden" asp-for="ReturnUrl" />
+            <div asp-validation-summary="ModelOnly" class="upload-validation" role="alert"></div>
+
+            <div class="auth-field">
+                <label asp-for="Input.Email"></label>
+                <input asp-for="Input.Email" autocomplete="email" autofocus placeholder="you@example.com" />
+                <span asp-validation-for="Input.Email"></span>
+            </div>
+
+            <div class="auth-field">
+                <label asp-for="Input.Password"></label>
+                <input asp-for="Input.Password" autocomplete="new-password" placeholder="At least 6 characters" />
+                <small>Use any password that is 6 characters or longer.</small>
+                <span asp-validation-for="Input.Password"></span>
+            </div>
+
+            <div class="auth-field">
+                <label asp-for="Input.ConfirmPassword"></label>
+                <input asp-for="Input.ConfirmPassword" autocomplete="new-password" placeholder="Type it again" />
+                <span asp-validation-for="Input.ConfirmPassword"></span>
+            </div>
+
+            <button class="cinemátron-button auth-submit" type="submit">Create my account <span>→</span></button>
+        </form>
+        <p class="auth-footer">Already have an account? <a asp-page="/Account/Login" asp-route-returnUrl="@Model.ReturnUrl">Log in</a></p>
+    </div>
+</section>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
