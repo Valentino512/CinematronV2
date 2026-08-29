@@ -80,10 +80,48 @@ jobs:
         with:
           name: .net-app
 
+      - name: Configure connection strings via Kudu (using publish profile)
+        if: ${{ secrets.AZURE_SQL_CONNECTION_STRING != '' }}
+        run: |
+          set -euo pipefail
+          echo "$AZURE_WEBAPP_PUBLISH_PROFILE" > publish.xml
+          python - <<'PY' > pubinfo.txt
+import xml.etree.ElementTree as ET, os
+s = os.environ.get('AZURE_WEBAPP_PUBLISH_PROFILE')
+root = ET.fromstring(s)
+for p in root.findall('publishProfile'):
+    if p.get('publishMethod') in ('ZipDeploy','MSDeploy'):
+        print(p.get('publishUrl'))
+        print(p.get('userName'))
+        print(p.get('userPWD'))
+        break
+else:
+    p = root.findall('publishProfile')[0]
+    print(p.get('publishUrl'))
+    print(p.get('userName'))
+    print(p.get('userPWD'))
+PY
+          publishUrl=$(sed -n '1p' pubinfo.txt)
+          username=$(sed -n '2p' pubinfo.txt)
+          password=$(sed -n '3p' pubinfo.txt)
+          host=${publishUrl%%:*}
+          kudu=https://$host
+          # Build JSON payload for Kudu connectionstrings API
+          conn=$(printf '%s' "$AZURE_SQL_CONNECTION_STRING" | sed 's/"/\\"/g')
+          json='{"DefaultConnection":{"value":"'"$conn"'","type":"SQLAzure"}}'
+          echo "Calling Kudu at $kudu/api/connectionstrings"
+          http_code=$(curl -s -o /tmp/kuduresp -w "%{http_code}" -u "$username:$password" -X PUT -H "Content-Type: application/json" -d "$json" "$kudu/api/connectionstrings")
+          cat /tmp/kuduresp
+          echo "Kudu HTTP status: $http_code"
+          if [ "$http_code" -ge 400 ]; then echo "Kudu update failed"; exit 1; fi
+        env:
+          AZURE_WEBAPP_PUBLISH_PROFILE: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          AZURE_SQL_CONNECTION_STRING: ${{ secrets.AZURE_SQL_CONNECTION_STRING }}
+
       - name: Deploy to Azure Web App using Publish Profile
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v2
         with:
-                app-name: ${{ env.AZURE_WEBAPP_NAME }}
-                publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-                package: ./myapp
+          app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./myapp
