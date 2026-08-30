@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cinematron.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260830083751_InitialPostgres")]
+    [Migration("20260830084915_InitialPostgres")]
     partial class InitialPostgres
     {
         /// <inheritdoc />
