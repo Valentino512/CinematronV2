@@ -21,7 +21,7 @@ namespace Cinematron.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
+             
             modelBuilder.Entity("Cinematron.Models.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")

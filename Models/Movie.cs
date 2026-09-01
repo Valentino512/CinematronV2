@@ -16,7 +16,7 @@ public sealed class Movie
 
     public DateTime CreatedUtc { get; set; }
 
-    public bool IsPublic { get; set; } = true;
+    public bool IsPublic { get; set; } = true; 
 
     public ICollection<MovieFile> Files { get; set; } = new List<MovieFile>();
     public ICollection<Comment> Comments { get; set; } = new List<Comment>();
