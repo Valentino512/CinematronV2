@@ -1,6 +1,5 @@
 using Cinematron.Data;
 using Cinematron.Models;
-using Microsoft.Data.SqlClient;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -259,14 +258,29 @@ namespace Cinematron.Controllers
 
         private static string RedactConnectionString(string connectionString)
         {
+            if (string.IsNullOrWhiteSpace(connectionString))
+                return connectionString;
+
             try
             {
-                var builder = new SqlConnectionStringBuilder(connectionString);
-                builder.Password = "********";
-                builder.UserID = string.IsNullOrWhiteSpace(builder.UserID) ? string.Empty : "********";
-                return builder.ConnectionString;
+                var sensitiveKeys = new[] { "Password", "Pwd", "User ID", "Username", "User Name" };
+                var segments = connectionString.Split(';', StringSplitOptions.RemoveEmptyEntries);
+
+                for (var index = 0; index < segments.Length; index++)
+                {
+                    var segment = segments[index];
+                    var separatorIndex = segment.IndexOf('=');
+                    if (separatorIndex < 0)
+                        continue;
+
+                    var key = segment[..separatorIndex].Trim();
+                    if (sensitiveKeys.Any(sensitiveKey => string.Equals(sensitiveKey, key, StringComparison.OrdinalIgnoreCase)))
+                        segments[index] = $"{key}=********";
+                }
+
+                return string.Join(';', segments);
             }
-            catch (ArgumentException)
+            catch (Exception)
             {
                 return "[connection string could not be parsed]";
             }
