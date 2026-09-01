@@ -16,6 +16,13 @@ namespace Cinematron.Data
         public DbSet<NewsItem> NewsItems => Set<NewsItem>();
         public DbSet<VideoReaction> VideoReactions => Set<VideoReaction>();
 
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        {
+            base.OnConfiguring(optionsBuilder);
+            optionsBuilder.ConfigureWarnings(warnings =>
+                warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        }
+
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
