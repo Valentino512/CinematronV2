@@ -30,6 +30,12 @@
             </div>
 
             <div class="auth-field">
+                <label asp-for="Input.FullName"></label>
+                <input asp-for="Input.FullName" placeholder="Your full name" />
+                <span asp-validation-for="Input.FullName"></span>
+            </div>
+
+            <div class="auth-field">
                 <label asp-for="Input.Password"></label>
                 <input asp-for="Input.Password" autocomplete="new-password" placeholder="At least 6 characters" />
                 <small>Use any password that is 6 characters or longer.</small>

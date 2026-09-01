@@ -6,8 +6,9 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace Cinematron.Areas.Identity.Pages.Account;
 
 public sealed class RegisterModel(
-    UserManager<IdentityUser> userManager,
-    SignInManager<IdentityUser> signInManager) : PageModel
+    UserManager<Cinematron.Models.ApplicationUser> userManager,
+    SignInManager<Cinematron.Models.ApplicationUser> signInManager,
+    RoleManager<IdentityRole> roleManager) : PageModel
 {
     [BindProperty]
     public InputModel Input { get; set; } = new();
@@ -25,15 +26,22 @@ public sealed class RegisterModel(
         if (!ModelState.IsValid)
             return Page();
 
-        var user = new IdentityUser
+        var user = new Cinematron.Models.ApplicationUser
         {
             UserName = Input.Email,
-            Email = Input.Email
+            Email = Input.Email,
+            FullName = Input.FullName
         };
         var result = await userManager.CreateAsync(user, Input.Password);
 
         if (result.Succeeded)
         {
+            if (string.Equals(user.Email, "valentinobukovski@gmail.com", StringComparison.OrdinalIgnoreCase)
+                && await roleManager.RoleExistsAsync("Admin"))
+            {
+                await userManager.AddToRoleAsync(user, "Admin");
+            }
+
             await signInManager.SignInAsync(user, isPersistent: false);
             return LocalRedirect(returnUrl ?? Url.Content("~/")!);
         }
@@ -50,6 +58,11 @@ public sealed class RegisterModel(
         [EmailAddress(ErrorMessage = "Enter a valid email address.")]
         [Display(Name = "Email address")]
         public string Email { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Enter your full name.")]
+        [StringLength(100)]
+        [Display(Name = "Full name")]
+        public string FullName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Choose a password.")]
         [StringLength(100, MinimumLength = 6, ErrorMessage = "Your password must be at least 6 characters.")]

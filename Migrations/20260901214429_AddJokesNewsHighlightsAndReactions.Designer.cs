@@ -3,6 +3,7 @@ using System;
 using Cinematron.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cinematron.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260901214429_AddJokesNewsHighlightsAndReactions")]
+    partial class AddJokesNewsHighlightsAndReactions
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -28,9 +31,6 @@ namespace Cinematron.Migrations
                         .HasColumnType("text");
 
                     b.Property<int>("AccessFailedCount")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("Age")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("BannedUntilUtc")
@@ -48,12 +48,7 @@ namespace Cinematron.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("FullName")
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
-
-                    b.Property<string>("Gender")
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("LastActiveUtc")
                         .HasColumnType("timestamp with time zone");
@@ -80,10 +75,6 @@ namespace Cinematron.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("ProfileMemo")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
@@ -218,11 +209,6 @@ namespace Cinematron.Migrations
                         .IsRequired()
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
-
-                    b.Property<bool>("IsPublic")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
 
                     b.Property<string>("OwnerId")
                         .IsRequired()

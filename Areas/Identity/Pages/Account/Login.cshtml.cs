@@ -6,10 +6,10 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 namespace Cinematron.Areas.Identity.Pages.Account;
 
 public sealed class LoginModel(
-    SignInManager<IdentityUser> signInManager,
+    SignInManager<Cinematron.Models.ApplicationUser> signInManager,
     ILogger<LoginModel> logger) : PageModel
 {
-    private readonly SignInManager<IdentityUser> _signInManager = signInManager;
+    private readonly SignInManager<Cinematron.Models.ApplicationUser> _signInManager = signInManager;
     private readonly ILogger<LoginModel> _logger = logger;
 
     [BindProperty]

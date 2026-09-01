@@ -1,0 +1,120 @@
+@model Cinematron.Models.AdminContentViewModel
+@using Cinematron.Controllers
+@{
+    ViewData["Title"] = "Admin";
+    var users = (IEnumerable<AdminUserViewModel>)ViewData["Users"]!;
+}
+<section class="admin-page">
+    <div class="admin-heading">
+        <div>
+            <p class="eyebrow">CINEMATRON CONTROL CENTER</p>
+            <h1>Admin panel</h1>
+            <p>Manage members, uploaded videos, and curated Home content.</p>
+        </div>
+        <span class="admin-count">@users.Count() members</span>
+    </div>
+
+    <div class="admin-content-grid">
+        <section class="admin-content-card">
+            <div class="admin-section-heading">
+                <div>
+                    <p class="eyebrow">CURATED CONTENT</p>
+                    <h2>Jokes</h2>
+                </div>
+            </div>
+            <form class="admin-editor" asp-action="SaveJoke" method="post">
+                @Html.AntiForgeryToken()
+                <textarea name="text" maxlength="1000" placeholder="Write a joke..." required></textarea>
+                <input name="author" maxlength="120" placeholder="Author (optional)" />
+                <label><input type="checkbox" name="isPublished" value="true" checked /> Published</label>
+                <button class="admin-button" type="submit">Add joke</button>
+            </form>
+            @foreach (var joke in Model.Jokes)
+            {
+                <form class="admin-item" asp-action="SaveJoke" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@joke.Id" />
+                    <textarea name="text" maxlength="1000" required>@joke.Text</textarea>
+                    <input name="author" value="@joke.Author" maxlength="120" />
+                    <label><input type="checkbox" name="isPublished" value="true" checked="@joke.IsPublished" /> Published</label>
+                    <button class="admin-button" type="submit">Save</button>
+                </form>
+                <form asp-action="DeleteJoke" method="post" class="admin-delete-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@joke.Id" />
+                    <button class="admin-danger" type="submit">Delete</button>
+                </form>
+            }
+        </section>
+        <section class="admin-content-card">
+            <div class="admin-section-heading">
+                <div>
+                    <p class="eyebrow">CURATED CONTENT</p>
+                    <h2>News</h2>
+                </div>
+            </div>
+            <form class="admin-editor" asp-action="SaveNews" method="post">
+                @Html.AntiForgeryToken()
+                <input name="headline" maxlength="200" placeholder="Headline" required />
+                <textarea name="summary" maxlength="2000" placeholder="Summary" required></textarea>
+                <input name="source" maxlength="200" placeholder="Source (optional)" />
+                <label><input type="checkbox" name="isPublished" value="true" checked /> Published</label>
+                <button class="admin-button" type="submit">Add news</button>
+            </form>
+            @foreach (var item in Model.News)
+            {
+                <form class="admin-item" asp-action="SaveNews" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@item.Id" />
+                    <input name="headline" value="@item.Headline" maxlength="200" required />
+                    <textarea name="summary" maxlength="2000" required>@item.Summary</textarea>
+                    <input name="source" value="@item.Source" maxlength="200" />
+                    <label><input type="checkbox" name="isPublished" value="true" checked="@item.IsPublished" /> Published</label>
+                    <button class="admin-button" type="submit">Save</button>
+                </form>
+                <form asp-action="DeleteNews" method="post" class="admin-delete-form">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" value="@item.Id" />
+                    <button class="admin-danger" type="submit">Delete</button>
+                </form>
+            }
+        </section>
+    </div>
+
+    <div class="admin-table-wrap">
+        <table class="admin-users">
+            <thead><tr><th>Name</th><th>Email</th><th>Last Active</th><th>Banned Until</th><th>Videos</th><th>Actions</th></tr></thead>
+            <tbody>
+            @foreach (var u in users)
+            {
+                <tr>
+                    <td data-label="Name"><strong>@u.DisplayName</strong></td>
+                    <td data-label="Email">@u.Email</td>
+                    <td data-label="Last Active">@(u.LastActiveUtc?.ToLocalTime().ToString("g") ?? "-")</td>
+                    <td data-label="Banned Until">@(u.BannedUntilUtc?.ToLocalTime().ToString("g") ?? "-")</td>
+                    <td data-label="Videos">
+                        <ul class="admin-videos">
+                        @foreach (var m in u.Movies)
+                        {
+                             <li><span>@m.Title (@(m.IsPublic ? "Public" : "Private"))</span> <a asp-controller="Home" asp-action="Watch" asp-route-id="@m.Id">Open</a> <form asp-action="DeleteVideo" method="post" style="display:inline" onsubmit="return confirm('Are you sure you want to permanently delete this video?');">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@m.Id" /><button class="admin-danger" type="submit">Delete</button></form></li>
+                        }
+                        </ul>
+                    </td>
+                    <td data-label="Actions">
+                        <form class="admin-action" asp-action="BanUser" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="userId" value="@u.Id" />
+                            <select name="days" aria-label="Ban duration">
+                                <option value="1">1 day</option>
+                                <option value="7">7 days</option>
+                                <option value="30">30 days</option>
+                            </select>
+                            <button class="admin-button" type="submit">Ban user</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</section>

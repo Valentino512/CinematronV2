@@ -31,7 +31,7 @@
                         </li>
                         <li class="nav-item"><a class="nav-link" href="/#about">About</a></li>
                         <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Upload">Upload</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Home" asp-action="Test">Test</a></li>
+                        @* Test link hidden from main navigation; access via direct URL /Home/Test when needed *@
                     </ul>
                     <form class="cinemátron-search" asp-controller="Home" asp-action="Index" method="get"><input name="search" value="@Context.Request.Query["search"]" type="search" placeholder="Search movies..." aria-label="Search movies" /><button type="submit">SEARCH</button></form>
                     <partial name="_LoginPartial" />

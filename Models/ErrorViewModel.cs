@@ -15,7 +15,22 @@ namespace Cinematron.Models
         string Description,
         string PosterUrl,
         Guid? Id = null,
-        string? VideoUrl = null);
+        string? VideoUrl = null,
+        string Author = "Cinematron",
+        string? OwnerId = null,
+        bool IsPublic = true);
+
+    public sealed record HomeContentViewModel(
+        IReadOnlyList<MovieCard> Movies,
+        IReadOnlyList<Joke> Jokes,
+        IReadOnlyList<NewsItem> News);
+
+    public sealed record AdminContentViewModel(
+        IReadOnlyList<AdminJokeViewModel> Jokes,
+        IReadOnlyList<AdminNewsViewModel> News);
+
+    public sealed record AdminJokeViewModel(Guid Id, string Text, string? Author, bool IsPublished);
+    public sealed record AdminNewsViewModel(Guid Id, string Headline, string Summary, string? Source, bool IsPublished);
 
     public sealed record WatchVideoViewModel(
         Guid Id,
@@ -24,7 +39,20 @@ namespace Cinematron.Models
         string Description,
         string PosterUrl,
         string VideoUrl,
-        string OriginalFileName);
+        string OriginalFileName,
+        IReadOnlyList<CommentViewModel> Comments,
+        string OwnerId,
+        IReadOnlyDictionary<VideoReactionType, int> ReactionCounts,
+        VideoReactionType? CurrentReaction);
+
+    public sealed record CommentViewModel(
+        Guid Id,
+        string UserId,
+        string UserName,
+        string Text,
+        DateTime CreatedUtc,
+        DateTime? EditedUtc,
+        bool IsHighlighted = false);
 
     public sealed class UploadVideoViewModel
     {

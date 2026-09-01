@@ -68,7 +68,8 @@
                         <img src="@movie.PosterUrl" alt="Poster for @movie.Title" loading="lazy" />
                         @if (movie.Id.HasValue && !string.IsNullOrWhiteSpace(movie.VideoUrl))
                         {
-                            <a class="play-button" asp-action="Watch" asp-route-id="@movie.Id" aria-label="Play @movie.Title">▶</a>
+                            <a class="play-button" asp-action="Watch" asp-route-id="@movie.Id" aria-label="Play @movie.Title">▶<span>Play</span></a>
+                            <video class="duration-source" data-duration-target="duration-@movie.Id" preload="metadata" src="@Url.Content(movie.VideoUrl)"></video>
                         }
                     </div>
                     <div class="movie-details">
@@ -82,7 +83,7 @@
                             <h3>@movie.Title</h3>
                         }
                         <p>@movie.Description</p>
-                        <span class="runtime">@movie.Runtime</span>
+                        <div class="movie-footer"><span class="runtime" id="duration-@movie.Id">@movie.Runtime</span><span class="movie-author">By @movie.Author</span></div>
                     </div>
                 </article>
             }
@@ -97,3 +98,4 @@
         </div>
     }
 </section>
+@section Scripts { <script>document.querySelectorAll('.duration-source').forEach(video => video.addEventListener('loadedmetadata', () => { const target = document.getElementById(video.dataset.durationTarget); if (!target || !Number.isFinite(video.duration)) return; const total = Math.round(video.duration); target.textContent = `${Math.floor(total / 3600).toString().padStart(2, '0')}:${Math.floor((total % 3600) / 60).toString().padStart(2, '0')}:${(total % 60).toString().padStart(2, '0')}`; }));</script> }

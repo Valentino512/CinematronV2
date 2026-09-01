@@ -14,18 +14,25 @@ namespace Cinematron.Controllers
         {
             var movies = GetDemoMovies();
             var uploadedMovies = await GetMovieCardsAsync(search);
+            var jokes = await dbContext.Jokes.AsNoTracking().Where(joke => joke.IsPublished).OrderByDescending(joke => joke.PublishedUtc).Take(3).ToListAsync();
+            var news = await dbContext.NewsItems.AsNoTracking().Where(item => item.IsPublished).OrderByDescending(item => item.PublishedUtc).Take(3).ToListAsync();
             var filteredMovies = string.IsNullOrWhiteSpace(search) ? movies : movies.Where(movie => movie.Title.Contains(search, StringComparison.OrdinalIgnoreCase) || movie.Genre.Contains(search, StringComparison.OrdinalIgnoreCase));
             ViewData["Search"] = search;
-            return View(nameof(Index), filteredMovies.Concat(uploadedMovies));
+            return View(nameof(Index), new HomeContentViewModel(filteredMovies.Concat(uploadedMovies).ToArray(), jokes, news));
         }
 
         [HttpGet]
         public async Task<IActionResult> Videos(string? name, string? genre, DateTime? fromDate, DateTime? toDate, string sort = "newest")
         {
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var query = dbContext.Movies
                 .AsNoTracking()
                 .Include(movie => movie.Files)
+                .Include(movie => movie.Owner)
                 .AsQueryable();
+
+            if (!User.IsInRole("Admin"))
+                query = query.Where(movie => movie.IsPublic || movie.OwnerId == currentUserId);
 
             if (!string.IsNullOrWhiteSpace(name))
                 query = query.Where(movie => movie.Title.Contains(name));
@@ -91,8 +98,12 @@ namespace Cinematron.Controllers
                 .Include(value => value.Files)
                 .FirstOrDefaultAsync(value => value.Id == id);
 
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (movie is null || (!movie.IsPublic && !User.IsInRole("Admin") && movie.OwnerId != currentUserId))
+                return NotFound();
+
             var video = movie?.Files.FirstOrDefault(file => file.AssetType == "Video");
-            if (movie is null || video is null || !video.StoragePath.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
+            if (video is null || !video.StoragePath.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
                 return NotFound();
 
             var videoFile = Path.Combine(environment.WebRootPath, video.StoragePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
@@ -100,6 +111,21 @@ namespace Cinematron.Controllers
                 return NotFound();
 
             var poster = movie.Files.FirstOrDefault(file => file.AssetType == "Poster");
+            var comments = await dbContext.Comments
+                .AsNoTracking()
+                .Where(c => c.MovieId == movie.Id)
+                .OrderByDescending(c => c.IsHighlighted)
+                .ThenByDescending(c => c.CreatedUtc)
+                .ToListAsync();
+
+            var userIds = comments.Select(c => c.UserId).Distinct().ToArray();
+            var users = await dbContext.Users.Where(u => userIds.Contains(u.Id)).ToDictionaryAsync(u => u.Id, u => u.FullName ?? u.UserName ?? u.Email ?? u.Id);
+
+            var commentViewModels = comments.Select(c => new CommentViewModel(c.Id, c.UserId, users.GetValueOrDefault(c.UserId) ?? c.UserId, c.Text, c.CreatedUtc, c.EditedUtc, c.IsHighlighted)).ToArray();
+            var reactions = await dbContext.VideoReactions.AsNoTracking().Where(reaction => reaction.MovieId == movie.Id).ToListAsync();
+            var reactionCounts = Enum.GetValues<VideoReactionType>().ToDictionary(type => type, type => reactions.Count(reaction => reaction.Type == type));
+            var currentReaction = reactions.FirstOrDefault(reaction => reaction.UserId == currentUserId)?.Type;
+
             return View(new WatchVideoViewModel(
                 movie.Id,
                 movie.Title,
@@ -107,12 +133,182 @@ namespace Cinematron.Controllers
                 movie.Description,
                 poster?.StoragePath ?? "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=700&q=80",
                 video.StoragePath,
-                video.OriginalFileName));
+                video.OriginalFileName,
+                commentViewModels,
+                movie.OwnerId,
+                reactionCounts,
+                currentReaction));
         }
 
         public IActionResult Privacy()
         {
             return View();
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddComment(Guid movieId, [FromForm] string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return BadRequest(new { error = "Comment text cannot be empty." });
+
+            if (!await dbContext.Movies.AnyAsync(movie => movie.Id == movieId))
+                return NotFound(new { error = "The selected movie was not found." });
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+                return Unauthorized();
+
+            var comment = new Comment
+            {
+                Id = Guid.NewGuid(),
+                MovieId = movieId,
+                UserId = userId,
+                Text = text.Trim(),
+                CreatedUtc = DateTime.UtcNow
+            };
+
+            dbContext.Comments.Add(comment);
+            await dbContext.SaveChangesAsync();
+
+            var user = await dbContext.Users.FindAsync(userId);
+            var userName = user?.FullName ?? user?.UserName ?? user?.Email ?? userId;
+            var vm = new CommentViewModel(comment.Id, comment.UserId, userName, comment.Text, comment.CreatedUtc, comment.EditedUtc);
+            return Json(vm);
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditComment(Guid id, [FromForm] string text)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+                return BadRequest(new { error = "Comment text cannot be empty." });
+
+            var comment = await dbContext.Comments.FindAsync(id);
+            if (comment is null)
+                return NotFound();
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (comment.UserId != userId)
+                return Forbid();
+
+            comment.Text = text.Trim();
+            comment.EditedUtc = DateTime.UtcNow;
+            await dbContext.SaveChangesAsync();
+
+            return Ok(new { success = true, editedUtc = comment.EditedUtc });
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteComment(Guid id)
+        {
+            var comment = await dbContext.Comments.FindAsync(id);
+            if (comment is null)
+                return NotFound();
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (comment.UserId != userId)
+                return Forbid();
+
+            dbContext.Comments.Remove(comment);
+            await dbContext.SaveChangesAsync();
+            return Ok(new { success = true });
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleCommentHighlight(Guid id)
+        {
+            var comment = await dbContext.Comments.Include(value => value.Movie).FirstOrDefaultAsync(value => value.Id == id);
+            if (comment?.Movie is null)
+                return NotFound();
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!User.IsInRole("Admin") && comment.Movie.OwnerId != userId)
+                return Forbid();
+
+            comment.IsHighlighted = !comment.IsHighlighted;
+            await dbContext.SaveChangesAsync();
+            return Ok(new { success = true, isHighlighted = comment.IsHighlighted });
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetVideoReaction(Guid movieId, VideoReactionType type)
+        {
+            if (!Enum.IsDefined(type) || !await dbContext.Movies.AnyAsync(movie => movie.Id == movieId))
+                return BadRequest(new { error = "Invalid video reaction." });
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(userId))
+                return Unauthorized();
+
+            var reaction = await dbContext.VideoReactions.FirstOrDefaultAsync(value => value.MovieId == movieId && value.UserId == userId);
+            if (reaction is null)
+            {
+                reaction = new VideoReaction { Id = Guid.NewGuid(), MovieId = movieId, UserId = userId, Type = type, CreatedUtc = DateTime.UtcNow };
+                dbContext.VideoReactions.Add(reaction);
+            }
+            else if (reaction.Type == type)
+            {
+                dbContext.VideoReactions.Remove(reaction);
+            }
+            else
+            {
+                reaction.Type = type;
+            }
+
+            await dbContext.SaveChangesAsync();
+            var counts = await dbContext.VideoReactions.Where(value => value.MovieId == movieId).GroupBy(value => value.Type).Select(group => new { Type = group.Key, Count = group.Count() }).ToDictionaryAsync(value => value.Type, value => value.Count);
+            return Ok(new { counts, currentReaction = reaction.Type == type && dbContext.Entry(reaction).State != EntityState.Deleted ? type.ToString() : null });
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteVideo(Guid id)
+        {
+            var movie = await dbContext.Movies.Include(value => value.Files).FirstOrDefaultAsync(value => value.Id == id);
+            if (movie is null)
+                return NotFound();
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!User.IsInRole("Admin") && movie.OwnerId != userId)
+                return Forbid();
+
+            foreach (var file in movie.Files)
+            {
+                var path = Path.Combine(environment.WebRootPath, file.StoragePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                try { System.IO.File.Delete(path); } catch { }
+            }
+
+            dbContext.Movies.Remove(movie);
+            await dbContext.SaveChangesAsync();
+            return RedirectToAction(User.IsInRole("Admin") ? nameof(Index) : nameof(MyVideos));
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetVideoVisibility(Guid id)
+        {
+            var movie = await dbContext.Movies.FindAsync(id);
+            if (movie is null)
+                return NotFound();
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!User.IsInRole("Admin") && movie.OwnerId != userId)
+                return Forbid();
+
+            movie.IsPublic = !movie.IsPublic;
+            await dbContext.SaveChangesAsync();
+            return RedirectToAction(nameof(MyVideos));
         }
 
         [HttpGet]
@@ -216,10 +412,13 @@ namespace Cinematron.Controllers
             var query = dbContext.Movies
                 .AsNoTracking()
                 .Include(movie => movie.Files)
+                .Include(movie => movie.Owner)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(ownerId))
                 query = query.Where(movie => movie.OwnerId == ownerId);
+            else if (!User.IsInRole("Admin"))
+                query = query.Where(movie => movie.IsPublic);
 
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(movie => movie.Title.Contains(search) || movie.Genre.Contains(search));
@@ -232,7 +431,8 @@ namespace Cinematron.Controllers
         {
             var poster = movie.Files.FirstOrDefault(file => file.AssetType == "Poster");
             var video = movie.Files.FirstOrDefault(file => file.AssetType == "Video");
-            return new MovieCard(movie.Title, movie.Genre, movie.CreatedUtc.Year.ToString(), "Uploaded", movie.Description, poster?.StoragePath ?? "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=700&q=80", movie.Id, video?.StoragePath);
+            var author = movie.Owner?.FullName ?? movie.Owner?.UserName ?? movie.Owner?.Email ?? "Cinematron";
+            return new MovieCard(movie.Title, movie.Genre, movie.CreatedUtc.Year.ToString(), "00:00:00", movie.Description, poster?.StoragePath ?? "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=700&q=80", movie.Id, video?.StoragePath, author, movie.OwnerId, movie.IsPublic);
         }
 
         private static MovieCard[] GetDemoMovies() =>

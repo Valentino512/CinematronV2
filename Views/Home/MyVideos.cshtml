@@ -26,14 +26,30 @@
                         <img src="@movie.PosterUrl" alt="Poster for @movie.Title" loading="lazy" />
                         @if (movie.Id.HasValue && !string.IsNullOrWhiteSpace(movie.VideoUrl))
                         {
-                            <a class="play-button" asp-action="Watch" asp-route-id="@movie.Id" aria-label="Play @movie.Title">▶</a>
+                            <a class="play-button" asp-action="Watch" asp-route-id="@movie.Id" aria-label="Play @movie.Title">▶<span>Play</span></a>
+                            <video class="duration-source" data-duration-target="duration-@movie.Id" preload="metadata" src="@Url.Content(movie.VideoUrl)"></video>
                         }
                     </div>
                     <div class="movie-details">
                         <div class="movie-meta"><span>@movie.Genre</span><span>@movie.Year</span></div>
                         <h3><a class="movie-title-link" asp-action="Watch" asp-route-id="@movie.Id">@movie.Title</a></h3>
                         <p>@movie.Description</p>
-                        <span class="runtime">@movie.Runtime</span>
+                        <div class="movie-footer"><span class="runtime" id="duration-@movie.Id">@movie.Runtime</span><span class="movie-author">By @movie.Author</span></div>
+                        @if (movie.Id.HasValue)
+                        {
+                            <div class="movie-actions">
+                                <form asp-action="SetVideoVisibility" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@movie.Id" />
+                                    <button type="submit">@(movie.IsPublic ? "Make private" : "Make public")</button>
+                                </form>
+                                <form asp-action="DeleteVideo" method="post" onsubmit="return confirm('Are you sure you want to permanently delete this video?');">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="id" value="@movie.Id" />
+                                    <button type="submit">Delete</button>
+                                </form>
+                            </div>
+                        }
                     </div>
                 </article>
             }
@@ -47,3 +63,4 @@
         </div>
     }
 </section>
+@section Scripts { <script>document.querySelectorAll('.duration-source').forEach(video => video.addEventListener('loadedmetadata', () => { const target = document.getElementById(video.dataset.durationTarget); if (!target || !Number.isFinite(video.duration)) return; const total = Math.round(video.duration); target.textContent = `${Math.floor(total / 3600).toString().padStart(2, '0')}:${Math.floor((total % 3600) / 60).toString().padStart(2, '0')}:${(total % 60).toString().padStart(2, '0')}`; }));</script> }

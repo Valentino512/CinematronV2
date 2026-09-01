@@ -1,0 +1,21 @@
+@page
+@model Cinematron.Areas.Identity.Pages.Account.Manage.IndexModel
+@{
+    ViewData["Title"] = "Profile";
+}
+<section class="profile-page">
+    <div class="profile-heading"><p class="eyebrow">MANAGE YOUR ACCOUNT</p><h1>Profile</h1><p>Tell the Cinematron community a little more about you.</p></div>
+    @if (!string.IsNullOrWhiteSpace(Model.StatusMessage)) { <div class="profile-status">@Model.StatusMessage</div> }
+    <form method="post" class="profile-card">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="profile-validation"></div>
+        <div class="profile-grid">
+            <div class="profile-field profile-field-wide"><label asp-for="Input.FullName">Name</label><input asp-for="Input.FullName" placeholder="Your real name" /><span asp-validation-for="Input.FullName"></span></div>
+            <div class="profile-field"><label asp-for="Input.Age">Age</label><input asp-for="Input.Age" type="number" min="13" max="120" /></div>
+            <div class="profile-field"><label asp-for="Input.Gender">Gender</label><input asp-for="Input.Gender" placeholder="Optional" /></div>
+            <div class="profile-field profile-field-wide"><label asp-for="Input.ProfileMemo">Memo</label><textarea asp-for="Input.ProfileMemo" rows="6" placeholder="Write something about yourself..."></textarea><span asp-validation-for="Input.ProfileMemo"></span></div>
+        </div>
+        <button class="cinemátron-button" type="submit">Save profile <span>→</span></button>
+    </form>
+</section>
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

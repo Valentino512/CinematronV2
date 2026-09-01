@@ -3,6 +3,7 @@ using System;
 using Cinematron.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Cinematron.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260901194440_AddCommentsMessagesAndUserFields")]
+    partial class AddCommentsMessagesAndUserFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -28,9 +31,6 @@ namespace Cinematron.Migrations
                         .HasColumnType("text");
 
                     b.Property<int>("AccessFailedCount")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("Age")
                         .HasColumnType("integer");
 
                     b.Property<DateTime?>("BannedUntilUtc")
@@ -48,12 +48,7 @@ namespace Cinematron.Migrations
                         .HasColumnType("boolean");
 
                     b.Property<string>("FullName")
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
-
-                    b.Property<string>("Gender")
-                        .HasMaxLength(40)
-                        .HasColumnType("character varying(40)");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("LastActiveUtc")
                         .HasColumnType("timestamp with time zone");
@@ -80,10 +75,6 @@ namespace Cinematron.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("ProfileMemo")
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
@@ -120,9 +111,6 @@ namespace Cinematron.Migrations
                     b.Property<DateTime?>("EditedUtc")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<bool>("IsHighlighted")
-                        .HasColumnType("boolean");
-
                     b.Property<Guid>("MovieId")
                         .HasColumnType("uuid");
 
@@ -141,33 +129,6 @@ namespace Cinematron.Migrations
                     b.HasIndex("MovieId");
 
                     b.ToTable("Comments");
-                });
-
-            modelBuilder.Entity("Cinematron.Models.Joke", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Author")
-                        .HasMaxLength(120)
-                        .HasColumnType("character varying(120)");
-
-                    b.Property<bool>("IsPublished")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("PublishedUtc")
-                        .HasPrecision(0)
-                        .HasColumnType("timestamp(0) with time zone");
-
-                    b.Property<string>("Text")
-                        .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Jokes");
                 });
 
             modelBuilder.Entity("Cinematron.Models.Message", b =>
@@ -218,11 +179,6 @@ namespace Cinematron.Migrations
                         .IsRequired()
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
-
-                    b.Property<bool>("IsPublic")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true);
 
                     b.Property<string>("OwnerId")
                         .IsRequired()
@@ -284,66 +240,6 @@ namespace Cinematron.Migrations
                     b.HasIndex("MovieId", "AssetType");
 
                     b.ToTable("MovieFiles");
-                });
-
-            modelBuilder.Entity("Cinematron.Models.NewsItem", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Headline")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<bool>("IsPublished")
-                        .HasColumnType("boolean");
-
-                    b.Property<DateTime>("PublishedUtc")
-                        .HasPrecision(0)
-                        .HasColumnType("timestamp(0) with time zone");
-
-                    b.Property<string>("Source")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)");
-
-                    b.Property<string>("Summary")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("NewsItems");
-                });
-
-            modelBuilder.Entity("Cinematron.Models.VideoReaction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedUtc")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("MovieId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("character varying(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MovieId", "UserId")
-                        .IsUnique();
-
-                    b.ToTable("VideoReactions");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -511,17 +407,6 @@ namespace Cinematron.Migrations
                     b.Navigation("Movie");
                 });
 
-            modelBuilder.Entity("Cinematron.Models.VideoReaction", b =>
-                {
-                    b.HasOne("Cinematron.Models.Movie", "Movie")
-                        .WithMany("Reactions")
-                        .HasForeignKey("MovieId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Movie");
-                });
-
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -578,8 +463,6 @@ namespace Cinematron.Migrations
                     b.Navigation("Comments");
 
                     b.Navigation("Files");
-
-                    b.Navigation("Reactions");
                 });
 #pragma warning restore 612, 618
         }
