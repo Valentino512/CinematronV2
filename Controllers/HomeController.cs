@@ -8,7 +8,7 @@ using System.Security.Claims;
 
 namespace Cinematron.Controllers
 {
-    public class HomeController(ApplicationDbContext dbContext, IWebHostEnvironment environment) : Controller
+    public class HomeController(ApplicationDbContext dbContext, IWebHostEnvironment environment, IConfiguration configuration) : Controller
     {
         public async Task<IActionResult> Index(string? search)
         {
@@ -106,10 +106,6 @@ namespace Cinematron.Controllers
             if (video is null || !video.StoragePath.StartsWith("/uploads/", StringComparison.OrdinalIgnoreCase))
                 return NotFound();
 
-            var videoFile = Path.Combine(environment.WebRootPath, video.StoragePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-            if (!System.IO.File.Exists(videoFile))
-                return NotFound();
-
             var poster = movie.Files.FirstOrDefault(file => file.AssetType == "Poster");
             var comments = await dbContext.Comments
                 .AsNoTracking()
@@ -132,12 +128,34 @@ namespace Cinematron.Controllers
                 movie.Genre,
                 movie.Description,
                 poster?.StoragePath ?? "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=700&q=80",
-                video.StoragePath,
+                Url.Action(nameof(VideoFile), new { id = movie.Id })!,
                 video.OriginalFileName,
                 commentViewModels,
                 movie.OwnerId,
                 reactionCounts,
                 currentReaction));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> VideoFile(Guid id)
+        {
+            var movie = await dbContext.Movies
+                .AsNoTracking()
+                .Include(value => value.Files)
+                .FirstOrDefaultAsync(value => value.Id == id);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (movie is null || (!movie.IsPublic && !User.IsInRole("Admin") && movie.OwnerId != userId))
+                return NotFound();
+
+            var video = movie.Files.FirstOrDefault(file => file.AssetType == "Video");
+            if (video is null)
+                return NotFound();
+
+            var videoFile = ResolveUploadPath(video.StoragePath);
+            if (!System.IO.File.Exists(videoFile))
+                return NotFound();
+
+            return PhysicalFile(videoFile, string.IsNullOrWhiteSpace(video.ContentType) ? "application/octet-stream" : video.ContentType, enableRangeProcessing: true);
         }
 
         public IActionResult Privacy()
@@ -284,7 +302,7 @@ namespace Cinematron.Controllers
 
             foreach (var file in movie.Files)
             {
-                var path = Path.Combine(environment.WebRootPath, file.StoragePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+                var path = ResolveExistingUploadPath(file.StoragePath);
                 try { System.IO.File.Delete(path); } catch { }
             }
 
@@ -432,7 +450,7 @@ namespace Cinematron.Controllers
             var poster = movie.Files.FirstOrDefault(file => file.AssetType == "Poster");
             var video = movie.Files.FirstOrDefault(file => file.AssetType == "Video");
             var author = movie.Owner?.FullName ?? movie.Owner?.UserName ?? movie.Owner?.Email ?? "Cinematron";
-            return new MovieCard(movie.Title, movie.Genre, movie.CreatedUtc.Year.ToString(), "00:00:00", movie.Description, poster?.StoragePath ?? "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=700&q=80", movie.Id, video?.StoragePath, author, movie.OwnerId, movie.IsPublic);
+            return new MovieCard(movie.Title, movie.Genre, movie.CreatedUtc.Year.ToString(), "00:00:00", movie.Description, poster?.StoragePath ?? "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=700&q=80", movie.Id, video is null ? null : $"/Home/VideoFile/{movie.Id}", author, movie.OwnerId, movie.IsPublic);
         }
 
         private static MovieCard[] GetDemoMovies() =>
@@ -442,11 +460,39 @@ namespace Cinematron.Controllers
             new("Neon Run", "Action / Thriller", "2025", "1h 46m", "One night. One city. One chance to outrun the past.", "https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=700&q=80")
         ];
 
+        private string ResolveUploadPath(string storagePath)
+        {
+            var relativePath = storagePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
+            var configuredRoot = configuration["UploadRoot"];
+            var root = string.IsNullOrWhiteSpace(configuredRoot)
+                ? environment.WebRootPath
+                : Path.GetFullPath(configuredRoot);
+            var fullPath = Path.GetFullPath(Path.Combine(root, relativePath));
+            var normalizedRoot = Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar;
+            if (!fullPath.StartsWith(normalizedRoot, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("The stored upload path is invalid.");
+            return fullPath;
+        }
+
+        private string ResolveExistingUploadPath(string storagePath)
+        {
+            var configuredPath = ResolveUploadPath(storagePath);
+            if (System.IO.File.Exists(configuredPath))
+                return configuredPath;
+
+            var legacyPath = Path.GetFullPath(Path.Combine(environment.WebRootPath, storagePath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar)));
+            var normalizedWebRoot = Path.EndsInDirectorySeparator(environment.WebRootPath) ? environment.WebRootPath : environment.WebRootPath + Path.DirectorySeparatorChar;
+            if (legacyPath.StartsWith(normalizedWebRoot, StringComparison.OrdinalIgnoreCase))
+                return legacyPath;
+
+            return configuredPath;
+        }
+
         private async Task<string> SaveUploadAsync(IFormFile file, Guid movieId, string assetType)
         {
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
             var relativeDirectory = Path.Combine("uploads", "movies", movieId.ToString("N"));
-            var directory = Path.Combine(environment.WebRootPath, relativeDirectory);
+            var directory = Path.GetDirectoryName(ResolveUploadPath(Path.Combine(relativeDirectory, "placeholder")))!;
             Directory.CreateDirectory(directory);
 
             var fileName = $"{assetType}-{Guid.NewGuid():N}{extension}";
